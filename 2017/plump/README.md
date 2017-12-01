@@ -1,8 +1,8 @@
 ## iTunesのライブラリファイルを調べる
 
 ### はじめに
-アドベンドカレンダーのネタとして、「replでSQL」というものを
-考えていましたが、SQLを使うならそこそこの数のデータがないと面白く
+アドベントカレンダーのネタとして、「lispでSQL」というものを
+考えていましたが、SQLを使うならそこそこの数(≠5,6個)のデータがないと面白く
 ないので、まずデータを作るところから始めました。
 
 自分の手元にあるそこそこの数のデータとしては、
@@ -14,8 +14,8 @@ XMLファイルを解析してデータベースに突っ込んでいけば、
 
 ### iTunes Library.xml
  iTunes Library.xmlはXMLファイルですが、(macOSで従来から使われていた)plistを
-XMLフォーマットにした感が強く、XMLをパーズするだけで(後続で使える)データ構造
-が得るのは難しそうです。
+XMLフォーマットにした感が強く、XMLをパーズするだけで(その後のプログラムで使える)
+データ構造が得るのは難しそうです。
 
 なお、[iTunes ライブラリファイルについて](https://support.apple.com/ja-jp/HT201610)
 に書かれているように、iTunes 12.2 以降では、
@@ -26,29 +26,6 @@ XMLフォーマットにした感が強く、XMLをパーズするだけで(後�
 私のiTunes Library.xml(ファイルの頭から一曲分のレコード)は以下のようになります。
 
 ```
-<?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE plist PUBLIC "-//Apple Computer//DTD PLIST 1.0//EN" "http://www.apple.
-com/DTDs/PropertyList-1.0.dtd">
-<plist version="1.0">
-<dict>
-        <key>Major Version</key><integer>1</integer>
-        <key>Minor Version</key><integer>1</integer>
-        <key>Application Version</key><string>12.6.1.25</string>
-        <key>Date</key><date>2017-07-01T23:30:20Z</date>
-        <key>Features</key><integer>5</integer>
-        <key>Show Content Ratings</key><true/>
-        <key>Library Persistent ID</key><string>B982A8C26EB13FBC</string>
-        <key>Tracks</key>
-        <dict>
-                <key>898</key>
-                <dict>
-                        <key>Track ID</key><integer>898</integer>
-                        <key>Size</key><integer>9284778</integer>
-                        <key>Total Time</key><integer>458579</integer>
-                        <key>Disc Number</key><integer>1</integer>
-                        <key>Disc Count</key><integer>1</integer>
-                        <key>Track Number</key><integer>1</integer>
-                        <key>Track Count</key><integer>8</integer>
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple Computer//DTD PLIST 1.0//EN" "http://www.apple.
 com/DTDs/PropertyList-1.0.dtd">
@@ -98,10 +75,44 @@ com/DTDs/PropertyList-1.0.dtd">
                 </dict>
 ```
 
+行数などは次のようになります。
+
+```
+$ ~/data$ wc iTunes\ Music\ Library.xml 
+ 200838  364642 8977002 iTunes Music Library.xml
+$
+```
+
 ### plump
+quickdocでXMLを検索するとplumpがまず出てきます。
+plumpの説明には、
 
-### 試し読み
+> focusing on being lenient towards invalid markup. 
 
-### 全件読む
+とあり、lenient(寛大な/緩い)という単語に期待してしまいます。
 
+quicklispでインストールは簡単にできました。
+
+さっそく読み込んでみます。
+
+```
+(setq node 
+      (plump:parse (format nil "~{~a~^ ~}"
+                           (with-open-file (st (truename "~/data/iTunes Music Library.xml"))
+                            (loop for line = (read-line st nil)
+					 while line collect line))))))
+Evaluation took:
+  24.540 seconds of real time
+  24.448000 seconds of total run time (23.152000 user, 1.296000 system)
+  [ Run times consist of 5.424 seconds GC time, and 19.024 seconds non-GC time. ]
+  99.63% CPU
+  79 lambdas converted
+  35,337,906,864 processor cycles
+  1,278,043,408 bytes consed
+#<PLUMP-DOM:ROOT {1003B69D83}>
+```
+
+### 全件読んでみる
+
+### 取り出す対象を決める
 
