@@ -120,3 +120,6 @@ CL-USER> (format nil "~{~2,#^,~}" x)
 「common lisp恐るべし」ですね。
 
 
+明日はmyao_s_mokingさんの
+「Common Lispのwrite関数のオプショナル引数について」
+です。
