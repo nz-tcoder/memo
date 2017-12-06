@@ -15,8 +15,49 @@ lisper: 「symobl-function やな」
 lisper: 「クロージャは変数を閉じ込めることができます。」
 
 ```
-(let ((counter 0))
-  (lambda () (incf counter)))
+CL-USER> (setq inc 
+	       (let ((counter 0))
+		 (lambda () (incf counter))))
 ```
 
+聞き手: 「へー」
+lisper: 「閉じ込めた変数にアクセスすることもできます。」
+
+
+```
+
+CL-USER> (funcall inc)
+1
+CL-USER> (funcall inc)
+2
+```
+
+聞き手: 「ほー」
+
 例は[Let Over Lambda](https://letoverlambda.com/)から。
+
+#### 羊料理店において
+店員:「当店のおすすめは"マトンのステーキ"と"ラム肉の赤ワイン煮"です。」
+liper: 「僕はラムだ。」
+
+#### 格言でも何でもない
+「高階関数を引数にすると、デバッグトレースを見た時に後悔することがある。」
+
+#### liperの野望
+「マクロをネタに色んなカンファレンスに出まくろう。」
+
+#### loopに転向したcommon lisperのつぶやき
+「最近、再帰を使っていない。」
+
+#### キャンプでの調理方法
+「キャンプで食材の調理方法に困った時、unixerは"焼けば食える"の法則に
+従って何でも焼き、lisperは"煮れば食える"の法則に従って何でも鍋に放り込む。
+main-framerはその時、ただ涙がこぼれるだけらしい。」
+
+#### 無題
+```
+(defun leopordp (arg)
+  (eval arg))
+```
+
+お粗末。
