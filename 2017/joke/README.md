@@ -5,8 +5,7 @@
 2日目に続き、だじゃれネタです。[LispギャグAdvent Calendar](https://atnd.org/events/22826)に感化を受けています。
 
 #### lispらしさ
-質問者: 「lispを象徴する関数は何ですか？」
-
+質問者: 「lispを象徴する関数は何ですか？」 \br
 lisper: 「symobl-function やな」
 
 #### CLOSのスローガン
