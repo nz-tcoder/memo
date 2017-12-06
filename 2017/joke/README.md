@@ -6,7 +6,8 @@
 
 #### lispらしさ
 質問者: 「lispを象徴する関数は何ですか？」
-lisper: 「それは symobl-function やがな」
+
+lisper: 「symobl-function やな」
 
 #### CLOSのスローガン
 継承を使うように設計しよう!
