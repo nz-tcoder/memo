@@ -37,7 +37,7 @@ CL-USER> (funcall inc)
 
 例は[Let Over Lambda](https://letoverlambda.com/)から。
 
-#### 羊料理店において
+#### 羊料理の店にて
 店員:「当店のおすすめは"マトンのステーキ"と"ラム肉の赤ワイン煮"です。」  
 liper: 「僕はラムだ。」
 
