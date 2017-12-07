@@ -2,7 +2,10 @@
 
 この記事は[関西Lispユーザ会アドベントカレンダー](https://adventar.org/calendars/2490)8日目です。
 
-2日目に続き、だじゃれネタです。[LispギャグAdvent Calendar](https://atnd.org/events/22826)の感化を受けています。
+2日目に続き、だじゃれネタです。[LispギャグAdvent Calendar](https://atnd.org/even
+ts/22826)の感化を受けています。
+
+---
 
 #### lispらしさ
 質問者: 「lispを象徴する関数は何ですか？」  
@@ -79,4 +82,4 @@ main-framerはその時、ただ涙がこぼれるだけらしい。」
 
 ---
 
-お粗末。
+お粗末でした。
