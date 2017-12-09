@@ -1,16 +1,17 @@
 ## iTunesのライブラリファイルを調べる
+この記事は[関西Lispユーザ会アドベントカレンダー](https://adventar.org/calendars/2490)12日目です。
 
 ### はじめに
-アドベントカレンダーのネタとして、「lispでSQL」というものを
-考えていましたが、SQLを使うならそこそこの数のデータがないと面白く
-ないので、まずデータを作るところから始めました。
+元々は「lispでSQL」というものを考えていました。
+SQLを使う以上、そこそこの数のデータを扱わないと思い、
+まずデータベースを用意するところから始めました。
 
-自分の手元にあるそこそこの数のデータとしては、
-iTunesに掘り込んだCD(200くらい？)があります。
-iTunesではその情報がXMLファイルに保存されるので、
+手元にあるそこそこの数のデータとしては、
+iTunesの音楽情報(CD200枚分くらい？)があります。
+iTunesではその情報をXMLファイルとして保存しているので、
 XMLファイルを解析してデータベースに突っ込んでいけば、
 簡単にデータを作ることできるはず。
-なのですが、意外といろいろあったので、これをまずネタにしました。
+なのですが、意外といろいろあったので、これをまず説明することにしました。
 
 ### iTunes Library.xml
  iTunes Library.xmlはXMLファイルですが、(macOSで従来から使われていた)plistを
@@ -50,15 +51,13 @@ com/DTDs/PropertyList-1.0.dtd">
                         <key>Track Number</key><integer>1</integer>
                         <key>Track Count</key><integer>8</integer>
                         <key>Year</key><integer>1986</integer>
-                        <key>Date Modified</key><date>2009-11-08T00:36:07Z</date
->
+                        <key>Date Modified</key><date>2009-11-08T00:36:07Z</date>
                         <key>Date Added</key><date>2009-09-12T00:27:50Z</date>
                         <key>Bit Rate</key><integer>160</integer>
                         <key>Sample Rate</key><integer>44100</integer>
                         <key>Play Count</key><integer>7</integer>
                         <key>Play Date</key><integer>3545667249</integer>
-                        <key>Play Date UTC</key><date>2016-05-09T10:34:09Z</date
->
+                        <key>Play Date UTC</key><date>2016-05-09T10:34:09Z</date>
                         <key>Skip Count</key><integer>4</integer>
                         <key>Skip Date</key><date>2014-11-10T13:29:06Z</date>
                         <key>Artwork Count</key><integer>1</integer>
@@ -86,7 +85,7 @@ $
 ```
 
 ### plump
-XMLを扱うライブラリはインストールしていなかっので、quickdocでXMLを検索
+XMLを扱うライブラリはインストールしていなかったので、quickdocでXMLを検索
 しました。ダウンロードが多いplumpが無難そうです。
 
 quicklispでインストールは何の問題もなく終了。さっそく読み込んでみます。
@@ -112,6 +111,11 @@ During that period, and with 4 available CPU cores,
 
 `(format nil "~{~a~^ ~}"`は少々乱暴な方法とは思ったものの読み込むことができた。
 
+上の結果はcclで実行したものです。sbclでは`Heap exhausted, game over.`
+が出てしまいました。sbclでも動いた時があるのですが、メモリがぎりぎりで
+落ちる寸前とという状況だったのでしょう。
+
+### パーズ結果
 ```
 CL-USER> (length (plump:children node))
 5
@@ -132,15 +136,17 @@ CL-USER> (length (plump:children (aref (plump:children node) 4)))
 3
 ```
 
-パーズの結果は、
+パーズの結果は次の5つのオブジェクトとなりました。
 
-* xml-headerがあり、その後にtext(空白のみ)が続く。
-* doctypeがその後で、その後にtext(空白のみ)が続く。
-* 以下は全てelement。
+1. xml-header。
+2. text(空白のみ)。
+3. doctype。
+4. text(空白のみ)。
+5. element。
 
-ということ。20万行強のデータの全てが`#<ELEMENT plist #x302000CA255D>`に入っている。
-なのでこれを調べる。
+5番目の`#<ELEMENT plist #x302000CA255D>`に20万行強のデータの全てが入っているということです。これ(mainとする)を調べてみます。
 
+### mainを調べる
 ```
 CL-USER> (setq main (aref (plump:children node) 4))
 #<ELEMENT plist #x302000CA255D>
@@ -159,8 +165,8 @@ CL-USER> (plump:text (aref (plump:children main) 2))
 " "
 ```
 
-20万行の中身は一つのオブジェクト、`#<ELEMENT dict #x302000CA1E3D>`の中に
-収まっていることが判る。
+mainは三つのオブジェクトタからなり、二つ目の`#<ELEMENT dict #x302000CA1E3D>`の中に
+20万行強のデータの全てが入っています。
 
 ```
 CL-USER> (aref (plump:children main) 1)
@@ -169,7 +175,7 @@ CL-USER> (length (plump:children (aref (plump:children main) 1)))
 33
 ```
 
-これくらいないなら、出力しても問題ない。
+これくらいないなら、出力しても問題なしです。
 
 ```
 CL-USER> (loop for n across (plump:children (aref (plump:children main) 1))
@@ -211,15 +217,19 @@ CL-USER> (loop for n across (plump:children (aref (plump:children main) 1))
 NIL
 ```
 
-text-nodeはもしかして全て空白と思って確かめてみる。
+これまでのtext-nodeは全て空白のみでしたので、ここも空白のみの可能性が高いです。
 
 ```
-(loop for n across (plump:children (aref (plump:children main) 1))
-	    if (plump:text-node-p n) collect (plump:text n))
-(" 	" " 	" " 	" " 	" " 	" " 	" " 	" " 	" " 	" " 	" " 	" " 	" " ")
+#<ELEMENT plist #x302000C7E79D>
+CL-USER> (remove-duplicates (loop for n across (plump:children main)
+			       if (plump:text-node-p n)
+			       collect (string-trim '(#\Space #\Tab) (plump:text n)))
+			    :test #'equal)
+
+("")
 ```
 
-そうでした。text-nodeは無視して問題ない。
+空白のみでした。text-nodeは無視して問題なしです。text-node以外を出力します。
 
 ```
 CL-USER> (loop for n across (plump:children (aref (plump:children main) 1))
@@ -248,7 +258,8 @@ CL-USER> (loop for n across (plump:children (aref (plump:children main) 1))
 NIL
 ```
 
-element-keyを出力してみる。
+全てelementです。この結果はtag-nameがkey、integerなどであることを示しています。
+tag-nameがkeyであるオブジェクトの子要素を出力すると、
 
 ```
 CL-USER> (loop for n across (plump:children (aref (plump:children main) 1))
@@ -269,9 +280,9 @@ Music Folder
 NIL
 ```
 
-xmlの冒頭との対応が大体取れる。名前からしてTracksの次の
-`#<ELEMENT dict #x302000C9C8AD>`の中にCDの曲の情報が入っていそう。
-幸い、tag名`dict`は一つしかない。
+となり、XMLの冒頭との対応が大体取れることが判ります。Tracksの次の
+`#<ELEMENT dict #x302000C9C8AD>`の中にCDの曲の情報が入っていそうです。
+幸い、tag名が`dict`のオブジェクトは一つしかないので、
 
 ```
 CL-USER> (setq tracks
@@ -285,11 +296,11 @@ CL-USER> (length (plump:children tracks))
 20557
 ```
 
-やっと曲の情報にたどりついた。
+まとまった数のデータがあります。やっと曲の情報にたどりつきました。
 
 ### 曲の情報
-二万を超えるものを全部出力しているとしゃれにならないので、
-どういうオブジェクトがあるのかを調べる。
+二万を超えるものを全部出力しているとシャレにならないので、
+どういうオブジェクトがあるのかを調べます。
 
 ```
 CL-USER> (remove-duplicates (loop for n across (plump:children tracks)
@@ -318,11 +329,14 @@ CL-USER> (loop for n across (plump:children tracks)
 5139
 ```
 
-text-nodeはここでも空白のみなので無視してよい。
-elementはkeyとdictの二つのみで、数と同じ。
-xmlファイルの冒頭の例からkeyはTrack IDが入って、曲名などは
-dictの中にあると思われる。そして今iTunesに入っている
-曲数は5139ということになる。最初のやつをもう少し詳しく見てみよう。
+text-nodeはここでも空白のみなので、無視してよいということです。
+elementはkeyとdictの二つのみで、個数が同じです。
+XMLファイルの冒頭の例(一曲目)からkeyにはTrack IDが入り、曲名などは
+dictの中にあると思われます。そして、keyの数(すなわちdictの5139)が
+iTunesに入っている曲数ということなります。
+次は、一曲目をもう少し詳しく見てましょう。
+
+### 一曲目を詳しく
 
 ```
 CL-USER> (setq sample
@@ -343,51 +357,106 @@ CL-USER> (remove-duplicates (loop for n across (plump:children sample)
 ("")
 ```
 
-今までと同じく、text-nodeは無視してよいことが判る。このxmlファイルは
-keyと値で構成されているので、element(key)を見ると、
+今までと同じく、text-nodeは無視してよいことが判ります。
 
 ```
+CL-USER> (remove-duplicates (loop for n across (plump:children sample)
+			       if (plump:element-p n)
+			       collect (plump:tag-name n))
+			    :test #'equal)
+("date" "integer" "key" "string")
 CL-USER> (loop for n across (plump:children sample)
-	    if (and (plump:element-p n)
-		    (string= (plump:tag-name n) "key"))
-	    collect (length (plump:children n)))
-(1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1)
-CL-USER> (loop for n across (plump:children sample)
-	    if (and (plump:element-p n)
-		    (string= (plump:tag-name n) "key"))
-	    do
-	      (format t "~a~%" (plump:text (aref (plump:children n) 0))))
-Track ID
-Size
-Total Time
-Disc Number
-Disc Count
-Track Number
-Track Count
-Year
-Date Modified
-Date Added
-Bit Rate
-Sample Rate
-Play Count
-Play Date
-Play Date UTC
-Skip Count
-Skip Date
-Artwork Count
-Persistent ID
-Track Type
-File Folder Count
-Library Folder Count
-Name
-Artist
-Composer
-Album
-Genre
-Kind
-Location
+	    if (plump:element-p n) 
+	      if (string= (plump:tag-name n) "date")
+	        count n into date-num
+	      else if (string= (plump:tag-name n) "integer")
+	        count n into integer-num
+	      else if (string= (plump:tag-name n) "key")
+	        count n into key-num
+	      else if (string= (plump:tag-name n) "string")
+	        count n into string-num
+	    finally
+	      (format t "date: ~d~%integer: ~d~%key: ~d~%string: ~d~%"
+		      date-num integer-num key-num string-num))
+date: 4
+integer: 16
+key: 29
+string: 9
 NIL
 ```
 
-XMLファイルの冒頭と同じことが判る。
+elementのtag-nameはdate、integer、key、stringの4つとなっています。
 
+keyの個数(29) = dateの個数(4) + integerの個数(16) + stringの個数(9)
+
+が成り立つので、keyが情報の種類を示していて、
+date/integer/stringがそれぞれの値を示していると考えられます。
+keyの中身を知るためには、さらの子要素を見ていきます。
+
+```
+CL-USER> (remove-duplicates (loop for n across (plump:children sample)
+			       if (and (plump:element-p n)
+				       (string= (plump:tag-name n) "key"))
+			       collect (length (plump:children n))))
+(1)
+CL-USER> (remove-duplicates (loop for n across (plump:children sample)
+			       if (and (plump:element-p n)
+				       (string= (plump:tag-name n) "key"))
+			       collect (class-name (class-of (aref (plump:children n) 0)))))
+(PLUMP-DOM:TEXT-NODE)
+```
+
+子要素は一つだけで、全てtext-nodeです。tag-nameがinteger、string、dateの場合も
+同様です。
+
+
+keyの中身、値の中身を取得することはできますが、
+詳しく調べるためには、keyと値を紐付けることができるデータ型で処理する方が楽です。
+
+### ハッシュ表を使う
+keyと値を紐付けるデータ型としてハッシュ表を使います。
+
+#### 関数用意
+ここからは関数を作っておかないと苦しい。`obj->hash`は一曲分のオブジェクト
+を引数に取り、それをハッシュ表として返す。
+
+```
+(defun get-child-value (obj)
+  (let ((tag (plump:tag-name obj))
+	(value (plump:text (aref (plump:children obj) 0))))
+    (if (string= tag "integer")
+	(parse-integer value)
+	value)))
+
+(defun obj->hash (obj)
+  (loop for (k v) on (loop for n across (plump:children obj)
+			if (plump:element-p n) collect n)
+     by #'cddr
+     with hash = (make-hash-table :test #'equal)
+     do
+       (setf (gethash (get-child-value k) hash)
+	     (get-child-value v))
+     finally
+       (return hash)))
+```
+
+sampleで動作確認。
+
+```
+ OBJ->HASH
+CL-USER> (setq h (obj->hash sample))
+#<HASH-TABLE :TEST EQUAL size 29/60 #x30201F69D05D>
+CL-USER> (gethash "Artist" h)
+"Adrian Belew"
+T
+CL-USER> (gethash "Album" h)
+"Desire Caught By The Tail"
+T
+CL-USER> (gethash "Name" h)
+"Tango Zebra"
+CL-USER> (gethash "Date Added" h)
+"2009-09-12T00:27:50Z"
+T
+CL-USER> (gethash "Track Number" h)
+1
+```
