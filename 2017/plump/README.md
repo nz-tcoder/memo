@@ -2,7 +2,7 @@
 
 ### はじめに
 アドベントカレンダーのネタとして、「lispでSQL」というものを
-考えていましたが、SQLを使うならそこそこの数(≠5,6個)のデータがないと面白く
+考えていましたが、SQLを使うならそこそこの数のデータがないと面白く
 ないので、まずデータを作るところから始めました。
 
 自分の手元にあるそこそこの数のデータとしては、
@@ -23,7 +23,7 @@ XMLフォーマットにした感が強く、XMLをパーズするだけで(そ�
 私の場合は、古いバージョンから使っていたせいかiTunes Library.xmlは
 作成されていました。
 
-私のiTunes Library.xml(ファイルの頭から一曲分のレコード)は以下のようになります。
+私のiTunes Library.xml(ファイルの頭から一曲分、Locationのみ編集)は以下のようになります。
 
 ```
 <?xml version="1.0" encoding="UTF-8"?>
@@ -33,23 +33,23 @@ com/DTDs/PropertyList-1.0.dtd">
 <dict>
         <key>Major Version</key><integer>1</integer>
         <key>Minor Version</key><integer>1</integer>
-        <key>Application Version</key><string>12.6.1.25</string>
-        <key>Date</key><date>2017-07-01T23:30:20Z</date>
+        <key>Application Version</key><string>12.7.1.14</string>
+        <key>Date</key><date>2017-11-26T08:51:50Z</date>
         <key>Features</key><integer>5</integer>
         <key>Show Content Ratings</key><true/>
         <key>Library Persistent ID</key><string>B982A8C26EB13FBC</string>
         <key>Tracks</key>
         <dict>
-                <key>898</key>
+                <key>899</key>
                 <dict>
-                        <key>Track ID</key><integer>898</integer>
+                        <key>Track ID</key><integer>899</integer>
                         <key>Size</key><integer>9284778</integer>
                         <key>Total Time</key><integer>458579</integer>
                         <key>Disc Number</key><integer>1</integer>
                         <key>Disc Count</key><integer>1</integer>
                         <key>Track Number</key><integer>1</integer>
                         <key>Track Count</key><integer>8</integer>
-                       <key>Year</key><integer>1986</integer>
+                        <key>Year</key><integer>1986</integer>
                         <key>Date Modified</key><date>2009-11-08T00:36:07Z</date
 >
                         <key>Date Added</key><date>2009-09-12T00:27:50Z</date>
@@ -57,7 +57,8 @@ com/DTDs/PropertyList-1.0.dtd">
                         <key>Sample Rate</key><integer>44100</integer>
                         <key>Play Count</key><integer>7</integer>
                         <key>Play Date</key><integer>3545667249</integer>
-                        <key>Play Date UTC</key><date>2016-05-09T10:34:09Z</date>
+                        <key>Play Date UTC</key><date>2016-05-09T10:34:09Z</date
+>
                         <key>Skip Count</key><integer>4</integer>
                         <key>Skip Date</key><date>2014-11-10T13:29:06Z</date>
                         <key>Artwork Count</key><integer>1</integer>
@@ -73,46 +74,214 @@ com/DTDs/PropertyList-1.0.dtd">
                         <key>Kind</key><string>MPEG オーディオファイル</string>
                         <key>Location</key><string>file:///Users/...</string>
                 </dict>
+
 ```
 
 行数などは次のようになります。
 
 ```
-$ ~/data$ wc iTunes\ Music\ Library.xml 
- 200838  364642 8977002 iTunes Music Library.xml
+$ wc iTunes\ Music\ Library.xml 
+215884  384497 9327870 iTunes Music Library.xml
 $
 ```
 
 ### plump
-quickdocでXMLを検索するとplumpがまず出てきます。
-plumpの説明には、
+XMLを扱うライブラリはインストールしていなかっので、quickdocでXMLを検索
+しました。ダウンロードが多いplumpが無難そうです。
 
-> focusing on being lenient towards invalid markup. 
+quicklispでインストールは何の問題もなく終了。さっそく読み込んでみます。
 
-とあり、lenient(寛大な/緩い)という単語に期待してしまいます。
-
-quicklispでインストールは簡単にできました。
-
-さっそく読み込んでみます。
 
 ```
-(setq node 
-      (plump:parse (format nil "~{~a~^ ~}"
-                           (with-open-file (st (truename "~/data/iTunes Music Library.xml"))
-                            (loop for line = (read-line st nil)
-					 while line collect line))))))
-Evaluation took:
-  24.540 seconds of real time
-  24.448000 seconds of total run time (23.152000 user, 1.296000 system)
-  [ Run times consist of 5.424 seconds GC time, and 19.024 seconds non-GC time. ]
-  99.63% CPU
-  79 lambdas converted
-  35,337,906,864 processor cycles
-  1,278,043,408 bytes consed
-#<PLUMP-DOM:ROOT {1003B69D83}>
+CL-USER> (time
+	  (setq node
+		(plump:parse (format nil "~{~a~^ ~}"
+				     (with-open-file (st "iTunes Music Library.xml")
+				       (loop for line = (read-line st nil)
+					  while line collect line))))))
+(SETQ NODE (PLUMP-PARSER:PARSE (FORMAT NIL "~{~a~^ ~}" (WITH-OPEN-FILE (ST "iTunes Music Library.xml") (LOOP FOR LINE = (READ-LINE ST NIL) WHILE LINE COLLECT LINE)))))
+took 78,965,428 microseconds (78.965420 seconds) to run.
+     39,196,153 microseconds (39.196150 seconds, 49.64%) of which was spent in GC.
+During that period, and with 4 available CPU cores,
+     77,536,000 microseconds (77.536000 seconds) were spent in user mode
+      1,120,000 microseconds ( 1.120000 seconds) were spent in system mode
+ 1,007,046,246 bytes of memory allocated.
+ 142,860 minor page faults, 0 major page faults, 0 swaps.
+#<PLUMP-DOM:ROOT #x302000CA3BFD>
 ```
 
-### 全件読んでみる
+`(format nil "~{~a~^ ~}"`は少々乱暴な方法とは思ったものの読み込むことができた。
 
-### 取り出す対象を決める
+```
+CL-USER> (length (plump:children node))
+5
+CL-USER> (loop for n across (plump:children node)
+	    do
+	      (format t "~a~%" n))
+#<XML-HEADER version 1.0>
+#<TEXT-NODE #x302000CA2F7D>
+#<DOCTYPE plist PUBLIC "-//Apple Computer//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+#<TEXT-NODE #x302000CA2A5D>
+#<ELEMENT plist #x302000CA255D>
+NIL
+CL-USER> (plump:text (aref (plump:children node) 1))
+" "
+CL-USER> (plump:text (aref (plump:children node) 3))
+" "
+CL-USER> (length (plump:children (aref (plump:children node) 4)))
+3
+```
+
+パーズの結果は、
+
+* xml-headerがあり、その後にtext(空白のみ)が続く。
+* doctypeがその後で、その後にtext(空白のみ)が続く。
+* 以下は全てelement。
+
+ということ。20万行強のデータの全てが`#<ELEMENT plist #x302000CA255D>`に入っている。
+なのでこれを調べる。
+
+```
+CL-USER> (setq main (aref (plump:children node) 4))
+#<ELEMENT plist #x302000CA255D>
+CL-USER> (length (plump:children main))
+3
+CL-USER> (loop for n across (plump:children main)
+	    do
+	      (format t "~a~%" n))
+#<TEXT-NODE #x302000CA235D>
+#<ELEMENT dict #x302000CA1E3D>
+#<TEXT-NODE #x30201F60C7BD>
+NIL
+CL-USER> (plump:text (aref (plump:children main) 0))
+" "
+CL-USER> (plump:text (aref (plump:children main) 2))
+" "
+```
+
+20万行の中身は一つのオブジェクト、`#<ELEMENT dict #x302000CA1E3D>`の中に
+収まっていることが判る。
+
+```
+CL-USER> (aref (plump:children main) 1)
+#<ELEMENT dict #x302000CA1E3D>
+CL-USER> (length (plump:children (aref (plump:children main) 1)))
+33
+```
+
+これくらいないなら、出力しても問題ない。
+
+```
+CL-USER> (loop for n across (plump:children (aref (plump:children main) 1))
+	    do
+	      (format t "~a~%" n))
+#<TEXT-NODE #x302000CA1DBD>
+#<ELEMENT key #x302000CA193D>
+#<ELEMENT integer #x302000CA13FD>
+#<TEXT-NODE #x302000CA132D>
+#<ELEMENT key #x302000CA0EAD>
+#<ELEMENT integer #x302000CA096D>
+#<TEXT-NODE #x302000CA089D>
+#<ELEMENT key #x302000CA041D>
+#<ELEMENT string #x302000C9FECD>
+#<TEXT-NODE #x302000C9FDDD>
+#<ELEMENT key #x302000C9F95D>
+#<ELEMENT date #x302000C9F44D>
+#<TEXT-NODE #x302000C9F32D>
+#<ELEMENT key #x302000C9EEAD>
+#<ELEMENT integer #x302000C9E97D>
+#<TEXT-NODE #x302000C9E8AD>
+#<ELEMENT key #x302000C9E42D>
+#<ELEMENT true #x302000C9DDBD>
+#<TEXT-NODE #x302000C9DD6D>
+#<ELEMENT key #x302000C9D8ED>
+#<ELEMENT string #x302000C9D39D>
+#<TEXT-NODE #x302000C9D28D>
+#<ELEMENT key #x302000C9CE0D>
+#<TEXT-NODE #x302000C9CD2D>
+#<ELEMENT dict #x302000C9C8AD>
+#<TEXT-NODE #x302019B7053D>
+#<ELEMENT key #x302019B700BD>
+#<TEXT-NODE #x302019B6FFCD>
+#<ELEMENT array #x302019B6FB4D>
+#<TEXT-NODE #x30201F60D55D>
+#<ELEMENT key #x30201F60D0DD>
+#<ELEMENT string #x30201F60CBAD>
+#<TEXT-NODE #x30201F60CA1D>
+NIL
+```
+
+text-nodeはもしかして全て空白と思って確かめてみる。
+
+```
+(loop for n across (plump:children (aref (plump:children main) 1))
+	    if (plump:text-node-p n) collect (plump:text n))
+(" 	" " 	" " 	" " 	" " 	" " 	" " 	" " 	" " 	" " 	" " 	" " 	" " ")
+```
+
+そうでした。text-nodeは無視して問題ない。
+
+```
+CL-USER> (loop for n across (plump:children (aref (plump:children main) 1))
+	    unless (plump:text-node-p n)
+	    do (format t "~a~%" n))
+#<ELEMENT key #x302000CA193D>
+#<ELEMENT integer #x302000CA13FD>
+#<ELEMENT key #x302000CA0EAD>
+#<ELEMENT integer #x302000CA096D>
+#<ELEMENT key #x302000CA041D>
+#<ELEMENT string #x302000C9FECD>
+#<ELEMENT key #x302000C9F95D>
+#<ELEMENT date #x302000C9F44D>
+#<ELEMENT key #x302000C9EEAD>
+#<ELEMENT integer #x302000C9E97D>
+#<ELEMENT key #x302000C9E42D>
+#<ELEMENT true #x302000C9DDBD>
+#<ELEMENT key #x302000C9D8ED>
+#<ELEMENT string #x302000C9D39D>
+#<ELEMENT key #x302000C9CE0D>
+#<ELEMENT dict #x302000C9C8AD>
+#<ELEMENT key #x302019B700BD>
+#<ELEMENT array #x302019B6FB4D>
+#<ELEMENT key #x30201F60D0DD>
+#<ELEMENT string #x30201F60CBAD>
+NIL
+```
+
+element-keyを出力してみる。
+
+```
+CL-USER> (loop for n across (plump:children (aref (plump:children main) 1))
+	    if (and (plump:element-p n) 
+		    (string= (plump:tag-name n) "key"))
+	    do
+	      (format t "~a~%" (plump:text (aref (plump:children n) 0))))
+Major Version
+Minor Version
+Application Version
+Date
+Features
+Show Content Ratings
+Library Persistent ID
+Tracks
+Playlists
+Music Folder
+NIL
+```
+
+xmlの冒頭との対応が大体取れる。名前からしてTracksの次の
+`#<ELEMENT dict #x302000C9C8AD>`の中にCDの曲の情報が入っていそう。
+幸い、tag名`dict`は一つしかない。
+
+```
+CL-USER> (setq tracks
+	       (loop for n across (plump:children (aref (plump:children main) 1))
+		  if (and (plump:element-p n) 
+			  (string= (plump:tag-name n) "dict"))
+		  do
+		    (return n)))
+#<ELEMENT dict #x302000C9C8AD>
+CL-USER> (length (plump:children tracks))
+20557
+```
 
