@@ -285,3 +285,109 @@ CL-USER> (length (plump:children tracks))
 20557
 ```
 
+やっと曲の情報にたどりついた。
+
+### 曲の情報
+二万を超えるものを全部出力しているとしゃれにならないので、
+どういうオブジェクトがあるのかを調べる。
+
+```
+CL-USER> (remove-duplicates (loop for n across (plump:children tracks)
+			       collect (class-name (class-of n))))
+(PLUMP-DOM:ELEMENT PLUMP-DOM:TEXT-NODE)
+CL-USER> (remove-duplicates (loop for n across (plump:children tracks)
+			       if (plump:text-node-p n)
+			       collect (string-trim '(#\Space #\Tab) (plump:text n)))
+			    :test #'equal)
+("")
+CL-USER> (remove-duplicates (loop for n across (plump:children tracks)
+			       if (plump:element-p n)
+			       collect (plump:tag-name n))
+			    :test #'equal)
+
+("key" "dict")
+CL-USER> (loop for n across (plump:children tracks)
+	    if (and (plump:element-p n) 
+		    (string= (plump:tag-name n) "key"))
+	    count n)
+5139
+CL-USER> (loop for n across (plump:children tracks)
+	    if (and (plump:element-p n) 
+		    (string= (plump:tag-name n) "dict"))
+	    count n)
+5139
+```
+
+text-nodeはここでも空白のみなので無視してよい。
+elementはkeyとdictの二つのみで、数と同じ。
+xmlファイルの冒頭の例からkeyはTrack IDが入って、曲名などは
+dictの中にあると思われる。そして今iTunesに入っている
+曲数は5139ということになる。最初のやつをもう少し詳しく見てみよう。
+
+```
+CL-USER> (setq sample
+	       (loop for n across (plump:children tracks)
+		  if (and (plump:element-p n) 
+			  (string= (plump:tag-name n) "dict"))
+		  do
+		    (return n)))
+#<ELEMENT dict #x302000C7821D>
+CL-USER> (remove-duplicates (loop for n across (plump:children sample)
+			       collect (class-name (class-of n))))
+(PLUMP-DOM:ELEMENT PLUMP-DOM:TEXT-NODE)
+
+CL-USER> (remove-duplicates (loop for n across (plump:children sample)
+			       if (plump:text-node-p n)
+			       collect (string-trim '(#\Space #\Tab) (plump:text n)))
+			    :test #'equal)
+("")
+```
+
+今までと同じく、text-nodeは無視してよいことが判る。このxmlファイルは
+keyと値で構成されているので、element(key)を見ると、
+
+```
+CL-USER> (loop for n across (plump:children sample)
+	    if (and (plump:element-p n)
+		    (string= (plump:tag-name n) "key"))
+	    collect (length (plump:children n)))
+(1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1)
+CL-USER> (loop for n across (plump:children sample)
+	    if (and (plump:element-p n)
+		    (string= (plump:tag-name n) "key"))
+	    do
+	      (format t "~a~%" (plump:text (aref (plump:children n) 0))))
+Track ID
+Size
+Total Time
+Disc Number
+Disc Count
+Track Number
+Track Count
+Year
+Date Modified
+Date Added
+Bit Rate
+Sample Rate
+Play Count
+Play Date
+Play Date UTC
+Skip Count
+Skip Date
+Artwork Count
+Persistent ID
+Track Type
+File Folder Count
+Library Folder Count
+Name
+Artist
+Composer
+Album
+Genre
+Kind
+Location
+NIL
+```
+
+XMLファイルの冒頭と同じことが判る。
+
