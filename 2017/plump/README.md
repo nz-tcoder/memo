@@ -15,8 +15,8 @@ XMLファイルを解析してデータベースに突っ込んでいけば、
 
 ### iTunes Library.xml
  iTunes Library.xmlはXMLファイルですが、(macOSで従来から使われていた)plistを
-XMLフォーマットにした感が強く、XMLをパーズするだけで(その後のプログラムで使える)
-データ構造が得るのは難しそうです。
+XMLフォーマットにした感が強く、XMLをパーズするだけでは、その後のプログラムで使えるようなデータ構造が得るのは難しそうです。
+
 
 なお、[iTunes ライブラリファイルについて](https://support.apple.com/ja-jp/HT201610)
 に書かれているように、iTunes 12.2 以降では、
@@ -24,7 +24,7 @@ XMLフォーマットにした感が強く、XMLをパーズするだけで(そ�
 私の場合は、古いバージョンから使っていたせいかiTunes Library.xmlは
 作成されていました。
 
-私のiTunes Library.xml(ファイルの頭から一曲分、Locationのみ編集)は以下のようになります。
+私のiTunes Library.xml(ファイルの頭から一曲分、Locationのみ編集)は以下となっています。
 
 ```
 <?xml version="1.0" encoding="UTF-8"?>
@@ -76,7 +76,7 @@ com/DTDs/PropertyList-1.0.dtd">
 
 ```
 
-行数などは次のようになります。
+行数などは次のようになります。そこそこの大きさと言えるのではないでしょうか。
 
 ```
 $ wc iTunes\ Music\ Library.xml 
@@ -109,11 +109,12 @@ During that period, and with 4 available CPU cores,
 #<PLUMP-DOM:ROOT #x302000CA3BFD>
 ```
 
-`(format nil "~{~a~^ ~}"`は少々乱暴な方法とは思ったものの読み込むことができた。
+`(format nil "~{~a~^ ~}"`は少々乱暴な方法とは思ったものの読み込むことができました。
 
-上の結果はcclで実行したものです。sbclでは`Heap exhausted, game over.`
-が出てしまいました。sbclでも動いた時があるのですが、メモリがぎりぎりで
-落ちる寸前とという状況だったのでしょう。
+
+##### 注意
+sbclでは`Heap exhausted, game over.`が出てしまいました。上の結果はcclで実行したものです。
+環境により、sbclでも動くとは思いますが。
 
 ### パーズ結果
 ```
@@ -280,9 +281,19 @@ Music Folder
 NIL
 ```
 
-となり、XMLの冒頭との対応が大体取れることが判ります。Tracksの次の
-`#<ELEMENT dict #x302000C9C8AD>`の中にCDの曲の情報が入っていそうです。
-幸い、tag名が`dict`のオブジェクトは一つしかないので、
+となり、XMLの冒頭との対応から、
+
+```
+#<ELEMENT key #x302000C9CE0D>     → Tracks
+#<ELEMENT dict #x302000C9C8AD>
+#<ELEMENT key #x302019B700BD>     → Playlists
+#<ELEMENT array #x302019B6FB4D>
+#<ELEMENT key #x30201F60D0DD>     → Music Folder
+#<ELEMENT string #x30201F60CBAD>
+```
+
+となっていて、Tracksの次のオブジェクト`#<ELEMENT dict #x302000C9C8AD>`の中に
+曲の情報が入っていそうです。
 
 ```
 CL-USER> (setq tracks
@@ -298,7 +309,7 @@ CL-USER> (length (plump:children tracks))
 
 まとまった数のデータがあります。やっと曲の情報にたどりつきました。
 
-### 曲の情報
+### 曲の情報を調べる。
 二万を超えるものを全部出力しているとシャレにならないので、
 どういうオブジェクトがあるのかを調べます。
 
