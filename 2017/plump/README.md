@@ -4,7 +4,7 @@
 ### はじめに
 元々は「lispでSQL」というネタを考えていました。
 SQLを使う以上、そこそこの数のデータを扱わないと面白くない思っていたので、
-まずデータを用意するところから始めましたが、作業をしていると色々あったので、データを作るところに中心に話をすること変更しました。
+まずデータを用意するところから始めましたが、作業をしていると色々あったので、データを作るところに中心に話をすることに変更しました。
 
 手元にあるそこそこの数のデータとしては、
 iTunesの音楽情報(CD200枚分くらい？)があります。
@@ -83,7 +83,7 @@ $
 ```
 
 ### plump
-XMLを扱うライブラリはインストールしていなかったので、quickdocでXMLを検索
+XMLを扱うライブラリをインストールしていなかったので、quickdocでXMLを検索
 しました。ダウンロードが多いplumpが無難そうです。
 
 quicklispでインストールは何の問題もなく終了。さっそく読み込んでみます。
@@ -135,7 +135,7 @@ CL-USER> (length (plump:children (aref (plump:children node) 4)))
 3
 ```
 
-パーズの結果は次の5つのオブジェクトとなりました。
+パーズの結果、iTunes Library.xmlは次の5つのオブジェクトとなります。
 
 1. xml-header。
 2. text(空白のみ)。
@@ -145,7 +145,6 @@ CL-USER> (length (plump:children (aref (plump:children node) 4)))
 
 5番目の`#<ELEMENT plist #x302000CA255D>`に20万行強のデータの全てが入っているということです。これ(mainとする)を調べてみます。
 
-### mainを調べる
 ```
 CL-USER> (setq main (aref (plump:children node) 4))
 #<ELEMENT plist #x302000CA255D>
@@ -164,7 +163,7 @@ CL-USER> (plump:text (aref (plump:children main) 2))
 " "
 ```
 
-mainは三つのオブジェクトタからなり、二つ目の`#<ELEMENT dict #x302000CA1E3D>`の中に
+mainは三つのオブジェクトからなり、二つ目の`#<ELEMENT dict #x302000CA1E3D>`の中に
 20万行強のデータの全てが入っています。
 
 ```
@@ -257,8 +256,7 @@ CL-USER> (loop for n across (plump:children (aref (plump:children main) 1))
 NIL
 ```
 
-全てelementです。この結果はtag-nameがkey、integerなどであることを示しています。
-tag-nameがkeyであるオブジェクトの子要素を出力すると、
+全てelementです。tag-nameがkeyであるオブジェクトの子要素を出力すると、
 
 ```
 CL-USER> (loop for n across (plump:children (aref (plump:children main) 1))
@@ -343,7 +341,7 @@ elementはkeyとdictの二つのみで、個数が同じです。
 XMLファイルの冒頭の例(一曲目)からkeyにはTrack IDが入り、曲名などは
 dictの中にあると思われます。そして、keyの数(すなわちdictの5139)が
 iTunesに入っている曲数ということなります。
-次は、一曲目をもう少し詳しく見てましょう。
+次は、一曲目をもう少し詳しく見てみます。
 
 ### 一曲目を詳しく
 
@@ -418,7 +416,7 @@ CL-USER> (remove-duplicates (loop for n across (plump:children sample)
 子要素は一つだけで、全てtext-nodeです。tag-nameがinteger、string、dateの場合も
 同様です。
 
-sample以外も同じ構造なっているか確認します。
+次に二曲目以降(sample以外)も同じ構造なっているか確認します。
 
 ### 二曲目以降の確認
 同じようなコードが出てくるので、関数を準備します。
@@ -435,7 +433,7 @@ sample以外も同じ構造なっているか確認します。
      always (= (length (plump:children n)) 1)))
 ```
 
-それでは、全曲の情報について一曲と同じ構造なのか調べます。
+それでは、全曲の情報について一曲目と同じ構造なのか調べます。
 
 ```
 CL-USER> (loop for child in (get-child tracks
@@ -518,8 +516,8 @@ T
 ここでもまず関数を用意します。
 
 #### 関数用意
-ここからは関数を作っておかないと苦しい。`node->hash`は一曲分のオブジェクト
-を引数に取り、それをハッシュ表として返す。
+`node->hash`は一曲分のオブジェクトを引数に取り、それをハッシュ表として返す。
+
 
 ```
 (defun node->hash (node)
@@ -549,4 +547,16 @@ CL-USER> (gethash "Name" h)
 "Tango Zebra"
 ```
 
-アーティスト名、アルバム名、曲名を問題なく取得できています。
+問題なさそうです。では、全曲について動かしてみます。
+
+```
+CL-USER> (length 
+          (setq track-list
+                (loop for n in (get-child tracks
+                                          #'(lambda (x)
+                                              (and (plump:element-p x) 
+                                                   (string= (plump:tag-name x) "dict"))))
+                     collect (node->hash n))))
+5139
+```
+
