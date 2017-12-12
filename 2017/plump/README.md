@@ -516,11 +516,12 @@ T
 一番よく聞いた曲などの「検索」っぽいこともできるようになります。
 
 ### ハッシュ表
-`node->hash`は一曲分のオブジェクトを引数に取り、それをハッシュ表として返す。
+ハッシュ表を作るための関数`node->hash`を準備します。
 
 
 ```
 (defun node->hash (node)
+  "一曲分のオブジェクトを引数に取り、それをハッシュ表として返す"
   (loop for (k v) on (loop for n across (plump:children node)
                         if (plump:element-p n) collect n)
      by #'cddr
@@ -583,9 +584,8 @@ During that period, and with 4 available CPU cores,
 940
 ```
 
-実はどちらも普通の曲と言えるものではないのですが、5000強のデータの中から
-簡単に抽出することができます。
+5000強のデータの中から簡単に抽出することができます
+(実はどちらも普通の曲と言えるものではないのですが)。
+
 
 長くなったので、今日はここまでにします。明日はtrack-listをいろいろと調べます。
-
-
